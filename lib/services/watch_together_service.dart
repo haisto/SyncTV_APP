@@ -13,11 +13,11 @@ class AuthException implements Exception {
 }
 
 class WatchTogetherService {
-  static String _baseUrl = 'https://tv.test.com/api';
+  static String _baseUrl = 'https://live.ilia.eu.org/api';
   static String get baseUrl => _baseUrl;
   static const String _tokenKey = 'synctv_token';
   static const String _baseUrlKey = 'synctv_base_url';
-  
+
   static final StreamController<void> _authErrorController = StreamController<void>.broadcast();
   static Stream<void> get onAuthError => _authErrorController.stream;
 
@@ -103,7 +103,7 @@ class WatchTogetherService {
 
     if (_isSuccess(response.statusCode)) {
       final json = jsonDecode(response.body);
-      
+
       // Try to get token from body or headers
       String? token;
       // Handle nested data structure { "data": { "token": "..." } }
@@ -133,10 +133,10 @@ class WatchTogetherService {
           } else if (json['role'] is int) {
             role = json['role'];
           }
-          
+
           return WUser(
-            id: '', 
-            username: username, 
+            id: '',
+            username: username,
             role: role,
             createdAt: 0,
           );
@@ -170,7 +170,7 @@ class WatchTogetherService {
       if (token == null) {
         token = data['token'];
       }
-      
+
       if (token != null) {
          await _saveToken(token);
          return await getUserInfo();
@@ -194,13 +194,13 @@ class WatchTogetherService {
     if (_isSuccess(response.statusCode)) {
       final json = jsonDecode(response.body);
       Map<String, dynamic> userMap = {};
-      
+
       if (json['data'] != null && json['data'] is Map) {
         userMap = json['data'];
       } else {
         userMap = json;
       }
-      
+
       return WUser.fromJson(userMap);
     } else {
       throw Exception('Failed to load user info: ${response.body}');
@@ -218,7 +218,7 @@ class WatchTogetherService {
 
     if (_isSuccess(response.statusCode)) {
       final data = jsonDecode(response.body);
-      
+
       List list = [];
       // Handle nested data structure
       if (data['data'] != null && data['data']['list'] != null) {
@@ -226,7 +226,7 @@ class WatchTogetherService {
       } else if (data['list'] != null) {
         list = data['list'];
       }
-      
+
       if (list.isNotEmpty) {
         return list.map((e) => WRoom.fromJson(e)).toList();
       }
@@ -247,7 +247,7 @@ class WatchTogetherService {
 
     if (_isSuccess(response.statusCode)) {
       final data = jsonDecode(response.body);
-      
+
       List list = [];
       // Handle nested data structure
       if (data['data'] != null && data['data']['list'] != null) {
@@ -257,7 +257,7 @@ class WatchTogetherService {
       } else if (data['data'] is List) {
         list = data['data'];
       }
-      
+
       if (list.isNotEmpty) {
         return list.map((e) => WRoom.fromJson(e)).toList();
       }
@@ -285,7 +285,7 @@ class WatchTogetherService {
 
     if (_isSuccess(response.statusCode)) {
       final data = jsonDecode(response.body);
-      
+
       String? roomId;
       if (data['data'] != null && data['data']['roomId'] != null) {
          roomId = data['data']['roomId'];
@@ -306,7 +306,7 @@ class WatchTogetherService {
       throw Exception('Failed to create room: ${response.body}');
     }
   }
-  
+
   // Delete Room
   static Future<void> deleteRoom(String roomId) async {
     final headers = await _getHeaders();
@@ -336,7 +336,7 @@ class WatchTogetherService {
       }),
     );
     _checkResponse(response);
-    
+
     if (response.statusCode != 200 && response.statusCode != 201 && response.statusCode != 204) {
       throw Exception('Failed to join room: ${response.body}');
     }
@@ -372,7 +372,7 @@ class WatchTogetherService {
     if (subPath != null && subPath.isNotEmpty) {
       url += '&subPath=${Uri.encodeComponent(subPath)}';
     }
-    
+
     final response = await http.get(
       Uri.parse(url),
       headers: headers,
@@ -384,7 +384,7 @@ class WatchTogetherService {
       // Try to parse list from various possible structures
       List list = [];
       int total = 0;
-      
+
       if (data['data'] != null) {
         if (data['data'] is List) {
           list = data['data'];
@@ -401,7 +401,7 @@ class WatchTogetherService {
       } else if (data is List) {
         list = data;
       }
-      
+
       return {
         'movies': list.map((e) => WMovie.fromJson(e)).toList(),
         'total': total,
@@ -561,7 +561,7 @@ class WatchTogetherService {
       throw Exception('Failed to logout from Emby: [${response.statusCode}] ${response.body}');
     }
   }
-  
+
   // Get Alist Account Info
   static Future<Map<String, dynamic>> getAListAccountInfo(String serverId) async {
     final headers = await _getHeaders();
@@ -600,7 +600,7 @@ class WatchTogetherService {
   static Future<List<String>> getBoundVendors() async {
     final headers = await _getHeaders();
     final List<String> vendors = [];
-    
+
     // Check Alist
     try {
       final alistResponse = await http.get(
@@ -645,10 +645,10 @@ class WatchTogetherService {
   // Add Movie (Updated to /api/room/movie/push with flexible payload)
   static Future<void> addMovie(String roomId, dynamic payload) async {
     final headers = await _getHeaders(roomId: roomId);
-    
+
     // Determine endpoint based on payload type
     final String endpoint = payload is List ? '/room/movie/pushs' : '/room/movie/push';
-    
+
     final response = await http.post(
       Uri.parse('$baseUrl$endpoint'),
       headers: headers,
@@ -762,7 +762,7 @@ class WatchTogetherService {
   // List Alist
   static Future<dynamic> listAlist(String path, {String? keyword, int page = 1, int max = 20}) async {
     final headers = await _getHeaders();
-    
+
     // Construct URI with query parameters
     final uri = Uri.parse('$baseUrl/vendor/alist/list').replace(queryParameters: {
       'page': page.toString(),
@@ -833,7 +833,7 @@ class WatchTogetherService {
   // List Emby
   static Future<dynamic> listEmby(String path, {String? keyword, int page = 1, int max = 20}) async {
     final headers = await _getHeaders();
-    
+
     // Construct URI with query parameters
     final uri = Uri.parse('$baseUrl/vendor/emby/list').replace(queryParameters: {
       'page': page.toString(),
@@ -905,7 +905,7 @@ class WatchTogetherService {
   static Future<WRoomSettings> getRoomSettings(String roomId, {bool isAdmin = false}) async {
     final headers = await _getHeaders(roomId: roomId);
     final url = isAdmin ? '$baseUrl/room/admin/settings' : '$baseUrl/room/settings';
-    
+
     // Using GET as is standard for fetching settings, though some APIs might use POST.
     // Based on Vue code using same URL for update (which is likely POST/PUT), fetch is likely GET.
     final response = await http.get(
@@ -1039,7 +1039,7 @@ class WatchTogetherService {
     if (search != null && search.isNotEmpty) {
       query += '&search=$search&keyword=$search';
     }
-    
+
     final response = await http.get(
       Uri.parse('$baseUrl/admin/user/list?$query'),
       headers: headers,
@@ -1100,7 +1100,7 @@ class WatchTogetherService {
   static Future<void> adminSetAdmin(String userId, bool isAdmin) async {
     final headers = await _getHeaders();
     final endpoint = isAdmin ? '/admin/admin/add' : '/admin/admin/delete';
-    
+
     final response = await http.post(
       Uri.parse('$baseUrl$endpoint'),
       headers: headers,
@@ -1194,7 +1194,7 @@ class WatchTogetherService {
   static Future<void> adminBanUser(String userId, bool ban) async {
     final headers = await _getHeaders();
     final endpoint = ban ? '/admin/user/ban' : '/admin/user/unban';
-    
+
     final response = await http.post(
       Uri.parse('$baseUrl$endpoint'),
       headers: headers,
@@ -1226,7 +1226,7 @@ class WatchTogetherService {
     if (status != null && status.isNotEmpty) {
       query += '&status=$status';
     }
-    
+
     final response = await http.get(
       Uri.parse('$baseUrl/admin/room/list?$query'),
       headers: headers,
@@ -1248,7 +1248,7 @@ class WatchTogetherService {
   static Future<void> adminBanRoom(String roomId, bool ban) async {
     final headers = await _getHeaders();
     final endpoint = ban ? '/admin/room/ban' : '/admin/room/unban';
-    
+
     final response = await http.post(
       Uri.parse('$baseUrl$endpoint'),
       headers: headers,

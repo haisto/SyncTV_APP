@@ -93,20 +93,20 @@ class _DesktopHomeScreenState extends State<DesktopHomeScreen> {
       });
 
       final results = await Future.wait([publicRoomsFuture, myRoomsFuture]);
-      
+
       final publicRooms = results[0];
       final myRooms = results[1];
-      
+
       final publicRoomIds = publicRooms.map((r) => r.roomId).toSet();
       final Map<String, WRoom> roomMap = {};
-      
+
       for (var room in myRooms) {
         if (!publicRoomIds.contains(room.roomId)) {
           room = room.copyWith(hidden: true);
         }
         roomMap[room.roomId] = room;
       }
-      
+
       for (var room in publicRooms) {
         if (!roomMap.containsKey(room.roomId)) {
           roomMap[room.roomId] = room;
@@ -336,7 +336,7 @@ class _DesktopHomeScreenState extends State<DesktopHomeScreen> {
               style: TextStyle(color: textColor),
               decoration: const InputDecoration(
                 labelText: '服务器地址',
-                hintText: '例如: https://tv.test.com/api',
+                hintText: '例如: https://live.ilia.eu.org/api',
                 labelStyle: TextStyle(color: Colors.grey),
                 prefixIcon: Icon(Icons.link, color: Colors.grey),
                 enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: Colors.grey)),
@@ -566,8 +566,8 @@ class _DesktopHomeScreenState extends State<DesktopHomeScreen> {
                           radius: 16,
                           backgroundColor: const Color(0xFF5D5FEF),
                           child: Text(
-                            _currentUser?.username.isNotEmpty == true 
-                              ? _currentUser!.username[0].toUpperCase() 
+                            _currentUser?.username.isNotEmpty == true
+                              ? _currentUser!.username[0].toUpperCase()
                               : '?',
                             style: const TextStyle(color: Colors.white, fontSize: 14),
                           ),
@@ -726,7 +726,7 @@ class _DesktopHomeScreenState extends State<DesktopHomeScreen> {
   Widget _buildRoomCard(WRoom room, int index) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final cardColor = isDark ? Colors.black : _cardColors[index % _cardColors.length];
-    
+
     return Container(
       decoration: BoxDecoration(
         color: cardColor,

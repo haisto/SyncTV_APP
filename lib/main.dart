@@ -40,7 +40,7 @@ class MyApp extends StatelessWidget {
         var newMediaQueryData = mediaQueryData;
         Widget newChild = child!;
         if (mediaQueryData.size.width < 600 && mediaQueryData.size.width > 0) {
-          const double targetWidth = 414.0;          
+          const double targetWidth = 414.0;
           if (mediaQueryData.size.width < targetWidth) {
             final double scale = mediaQueryData.size.width / targetWidth;
             newMediaQueryData = mediaQueryData.copyWith(
@@ -166,7 +166,7 @@ class _WatchTogetherHomeScreenState extends State<WatchTogetherHomeScreen> {
       setState(() {
         _isLoggedIn = true;
       });
-      
+
       _loadRooms(silent: false);
 
       await _fetchUserInfo();
@@ -187,21 +187,21 @@ class _WatchTogetherHomeScreenState extends State<WatchTogetherHomeScreen> {
       });
 
       final results = await Future.wait([publicRoomsFuture, myRoomsFuture]);
-      
+
       final publicRooms = results[0];
       final myRooms = results[1];
-      
+
       final publicRoomIds = publicRooms.map((r) => r.roomId).toSet();
 
       final Map<String, WRoom> roomMap = {};
-      
+
       for (var room in myRooms) {
         if (!publicRoomIds.contains(room.roomId)) {
           room = room.copyWith(hidden: true);
         }
         roomMap[room.roomId] = room;
       }
-      
+
       for (var room in publicRooms) {
         if (!roomMap.containsKey(room.roomId)) {
           roomMap[room.roomId] = room;
@@ -746,7 +746,7 @@ class _WatchTogetherHomeScreenState extends State<WatchTogetherHomeScreen> {
             style: TextStyle(color: textColor),
             decoration: const InputDecoration(
               labelText: '服务器地址',
-              hintText: '例如: https://tv.test.com/api',
+              hintText: '例如: https://live.ilia.eu.org/api',
               labelStyle: TextStyle(color: Colors.grey),
               prefixIcon: Icon(Icons.link, color: Colors.grey),
               enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: Colors.grey)),
@@ -936,7 +936,7 @@ class _WatchTogetherHomeScreenState extends State<WatchTogetherHomeScreen> {
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: isDark 
+            color: isDark
               ? Colors.black.withOpacity(0.3)
               : Colors.grey.withOpacity(0.1),
             blurRadius: isDark ? 8 : 12,

@@ -40,7 +40,7 @@ class _LargeScreenHomeState extends State<LargeScreenHome> {
       DeviceOrientation.landscapeLeft,
       DeviceOrientation.landscapeRight,
     ]);
-    
+
     _authErrorSubscription = WatchTogetherService.onAuthError.listen((_) {
       if (mounted) {
         WatchTogetherService.logout();
@@ -103,20 +103,20 @@ class _LargeScreenHomeState extends State<LargeScreenHome> {
       });
 
       final results = await Future.wait([publicRoomsFuture, myRoomsFuture]);
-      
+
       final publicRooms = results[0];
       final myRooms = results[1];
-      
+
       final publicRoomIds = publicRooms.map((r) => r.roomId).toSet();
       final Map<String, WRoom> roomMap = {};
-      
+
       for (var room in myRooms) {
         if (!publicRoomIds.contains(room.roomId)) {
           room = room.copyWith(hidden: true);
         }
         roomMap[room.roomId] = room;
       }
-      
+
       for (var room in publicRooms) {
         if (!roomMap.containsKey(room.roomId)) {
           roomMap[room.roomId] = room;
@@ -258,7 +258,7 @@ class _LargeScreenHomeState extends State<LargeScreenHome> {
               style: TextStyle(color: textColor),
               decoration: const InputDecoration(
                 labelText: '服务器地址',
-                hintText: '例如: https://tv.test.com/api',
+                hintText: '例如: https://live.ilia.eu.org/api',
                 labelStyle: TextStyle(color: Colors.grey),
                 prefixIcon: Icon(Icons.link, color: Colors.grey),
                 enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: Colors.grey)),
@@ -432,9 +432,9 @@ class _LargeScreenHomeState extends State<LargeScreenHome> {
                     color: isDark ? Colors.white : Colors.black87,
                   ),
                 ),
-                
+
                 const Spacer(),
-                
+
                 // Server Settings
                 IconButton(
                   icon: const Icon(Icons.dns_rounded),
@@ -442,7 +442,7 @@ class _LargeScreenHomeState extends State<LargeScreenHome> {
                   tooltip: '服务器设置',
                 ),
                 const SizedBox(width: 8),
-                
+
                 // Refresh
                 IconButton(
                   focusNode: _refreshFocus,
@@ -451,7 +451,7 @@ class _LargeScreenHomeState extends State<LargeScreenHome> {
                   tooltip: '刷新',
                 ),
                 const SizedBox(width: 24),
-                
+
                 // User Avatar (Login/Logout)
                 if (_isLoggedIn && _currentUser != null)
                   InkWell(
@@ -499,7 +499,7 @@ class _LargeScreenHomeState extends State<LargeScreenHome> {
                   ),
 
                 const SizedBox(width: 24),
-                
+
                 // Create Room Button
                 ElevatedButton.icon(
                   onPressed: _showCreateRoomDialog,
@@ -582,7 +582,7 @@ class _LargeScreenHomeState extends State<LargeScreenHome> {
   Widget _buildRoomCard(WRoom room, int index) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final cardColor = isDark ? Colors.black : _cardColors[index % _cardColors.length];
-    
+
     return Focus(
       child: Builder(
         builder: (context) {
@@ -593,8 +593,8 @@ class _LargeScreenHomeState extends State<LargeScreenHome> {
               decoration: BoxDecoration(
                 color: cardColor,
                 borderRadius: BorderRadius.circular(24),
-                border: hasFocus 
-                    ? Border.all(color: const Color(0xFF5D5FEF), width: 4) 
+                border: hasFocus
+                    ? Border.all(color: const Color(0xFF5D5FEF), width: 4)
                     : (isDark ? Border.all(color: Colors.white24, width: 1) : null),
                 boxShadow: [
                   BoxShadow(
