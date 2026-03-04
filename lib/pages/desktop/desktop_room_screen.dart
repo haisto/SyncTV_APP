@@ -39,7 +39,7 @@ class _DesktopRoomScreenState extends State<DesktopRoomScreen> with SingleTicker
   List<WUser> _members = [];
   List<WMovie> _movies = [];
   bool _isLoadingMovies = true;
-  
+
   // Pagination
   int _currentPage = 1;
   final int _pageSize = 20;
@@ -69,7 +69,7 @@ class _DesktopRoomScreenState extends State<DesktopRoomScreen> with SingleTicker
   // WebRTC
   WebRTCManager? _webrtcManager;
   bool _isVoiceJoined = false;
-  
+
   // Danmaku Stream
   final DanmakuController _danmakuController = DanmakuController();
 
@@ -85,12 +85,12 @@ class _DesktopRoomScreenState extends State<DesktopRoomScreen> with SingleTicker
         _channel?.sink.close();
         _reconnectTimer?.cancel();
         _webrtcManager?.leave();
-        
+
         Navigator.of(context).pop();
       }
     });
     _tabController = TabController(length: 3, vsync: this);
-    
+
     // Initialize WebRTC Manager
     _webrtcManager = WebRTCManager(
       onSignalingMessage: (type, data) {
@@ -104,7 +104,7 @@ class _DesktopRoomScreenState extends State<DesktopRoomScreen> with SingleTicker
             case 'leave': msgType = MessageType.WEBRTC_LEAVE; break;
             default: return;
           }
-          
+
           try {
             final payload = {'data': jsonEncode(data)};
             if (data['to'] != null) {
@@ -121,7 +121,7 @@ class _DesktopRoomScreenState extends State<DesktopRoomScreen> with SingleTicker
         if (mounted) setState(() {});
       },
     );
-    
+
     _joinRoom();
   }
 
@@ -155,7 +155,7 @@ class _DesktopRoomScreenState extends State<DesktopRoomScreen> with SingleTicker
   Future<void> _fetchMembers() async {
     try {
       final members = await WatchTogetherService.getRoomMembers(widget.room.roomId);
-      
+
       members.sort((a, b) {
         if (a.id == widget.room.creatorId) return -1;
         if (b.id == widget.room.creatorId) return 1;
@@ -179,10 +179,10 @@ class _DesktopRoomScreenState extends State<DesktopRoomScreen> with SingleTicker
     try {
       _currentPage = 1;
       _hasMoreMovies = true;
-      
+
       final parentFolder = _folderStack.isNotEmpty ? _folderStack.last : null;
       final result = await WatchTogetherService.getMovies(
-        widget.room.roomId, 
+        widget.room.roomId,
         parentId: parentFolder?.id,
         subPath: parentFolder?.subPath,
         page: 1,
@@ -198,7 +198,7 @@ class _DesktopRoomScreenState extends State<DesktopRoomScreen> with SingleTicker
           _isLoadingMovies = false;
           _hasMoreMovies = _movies.length < total;
         });
-        
+
         if (_movieScrollController.hasClients) {
           _movieScrollController.jumpTo(0);
         }
@@ -221,7 +221,7 @@ class _DesktopRoomScreenState extends State<DesktopRoomScreen> with SingleTicker
 
   Future<void> _loadMoreMovies() async {
     if (_isLoadingMoreMovies) return;
-    
+
     setState(() {
       _isLoadingMoreMovies = true;
     });
@@ -229,16 +229,16 @@ class _DesktopRoomScreenState extends State<DesktopRoomScreen> with SingleTicker
     try {
       final parentFolder = _folderStack.isNotEmpty ? _folderStack.last : null;
       final result = await WatchTogetherService.getMovies(
-        widget.room.roomId, 
+        widget.room.roomId,
         parentId: parentFolder?.id,
         subPath: parentFolder?.subPath,
         page: _currentPage + 1,
         max: _pageSize
       );
-      
+
       final movies = result['movies'] as List<WMovie>;
       final total = result['total'] as int;
-      
+
       if (mounted) {
         setState(() {
           if (movies.isNotEmpty) {
@@ -263,7 +263,7 @@ class _DesktopRoomScreenState extends State<DesktopRoomScreen> with SingleTicker
 
   Future<void> _connectWebSocket() async {
     _reconnectTimer?.cancel();
-    
+
     try {
       final token = await WatchTogetherService.getToken();
       if (token == null) return;
@@ -275,7 +275,7 @@ class _DesktopRoomScreenState extends State<DesktopRoomScreen> with SingleTicker
         path: '${httpUri.path}/room/ws',
         queryParameters: {'roomId': widget.room.roomId},
       );
-      
+
       _channel = IOWebSocketChannel.connect(
         wsUrl,
         protocols: [token],
@@ -283,7 +283,7 @@ class _DesktopRoomScreenState extends State<DesktopRoomScreen> with SingleTicker
 
       _channel!.stream.listen(
         (data) {
-          _reconnectAttempts = 0; 
+          _reconnectAttempts = 0;
           if (data is Uint8List || data is List<int>) {
              try {
                final message = SimpleProto.decode(data is Uint8List ? data : Uint8List.fromList(data));
@@ -313,11 +313,11 @@ class _DesktopRoomScreenState extends State<DesktopRoomScreen> with SingleTicker
        if (mounted) MessageUtils.showError(context, '连接断开，请退出重试');
        return;
     }
-    
+
     _reconnectAttempts++;
     final delay = Duration(seconds: _reconnectAttempts * 2); // Exponential backoff
     debugPrint('Scheduling reconnect attempt $_reconnectAttempts in ${delay.inSeconds}s');
-    
+
     _reconnectTimer = Timer(delay, () {
       if (mounted) {
         _connectWebSocket();
@@ -327,12 +327,12 @@ class _DesktopRoomScreenState extends State<DesktopRoomScreen> with SingleTicker
 
   void _handleWebSocketMessage(Map<String, dynamic> message) {
     final type = message['type'];
-    
+
     if (type == MessageType.CHAT) {
       final sender = message['sender'];
       final content = message['chatContent'];
       final username = sender != null ? sender['username'] : 'Unknown';
-      
+
       // Convert chat to danmaku
       if (_videoPlayerController != null && _videoPlayerController!.value.isInitialized) {
         final currentPos = _videoPlayerController!.value.position;
@@ -345,7 +345,7 @@ class _DesktopRoomScreenState extends State<DesktopRoomScreen> with SingleTicker
         );
         _danmakuController.add(danmaku);
       }
-      
+
       if (mounted) {
         setState(() {
           _messages.add({
@@ -366,9 +366,9 @@ class _DesktopRoomScreenState extends State<DesktopRoomScreen> with SingleTicker
         final isPlaying = status['is_playing'] == true;
         final currentTime = (status['current_time'] as num).toDouble();
         final playbackRate = (status['playback_rate'] as num?)?.toDouble() ?? 1.0;
-        
+
         _performSync(isPlaying, currentTime, playbackRate);
-        
+
         if (type == MessageType.SYNC) {
            debugPrint('Sync success');
         } else if (type == MessageType.CHECK_STATUS) {
@@ -392,17 +392,17 @@ class _DesktopRoomScreenState extends State<DesktopRoomScreen> with SingleTicker
            MessageUtils.showError(context, '登录已过期，请重新登录');
            Navigator.of(context).pop();
          }
-      } else if (type == MessageType.WEBRTC_OFFER || 
-                 type == MessageType.WEBRTC_ANSWER || 
+      } else if (type == MessageType.WEBRTC_OFFER ||
+                 type == MessageType.WEBRTC_ANSWER ||
                  type == MessageType.WEBRTC_ICE_CANDIDATE ||
                  type == MessageType.WEBRTC_JOIN ||
                  type == MessageType.WEBRTC_LEAVE) {
          if (_webrtcManager != null) {
             final webrtcMap = message['webrtcData'];
-            
+
             try {
               Map<String, dynamic> data = {};
-              
+
               if (webrtcMap != null && webrtcMap['data'] != null) {
                  try {
                    final decoded = jsonDecode(webrtcMap['data']);
@@ -416,19 +416,19 @@ class _DesktopRoomScreenState extends State<DesktopRoomScreen> with SingleTicker
 
               String? fromId;
               final rawFrom = webrtcMap != null ? webrtcMap['from'] : null;
-              
+
               if (rawFrom != null && rawFrom.toString().isNotEmpty) {
                  fromId = rawFrom.toString();
               } else if (message['sender'] != null) {
                  fromId = message['sender']['userId'];
               }
-              
+
               if (fromId != null) {
                  data['from'] = fromId;
               } else {
                  return;
               }
-            
+
               String signalType = '';
               switch (type) {
                  case MessageType.WEBRTC_OFFER: signalType = 'offer'; break;
@@ -437,7 +437,7 @@ class _DesktopRoomScreenState extends State<DesktopRoomScreen> with SingleTicker
                  case MessageType.WEBRTC_JOIN: signalType = 'join'; break;
                  case MessageType.WEBRTC_LEAVE: signalType = 'leave'; break;
               }
-              
+
               if (signalType.isNotEmpty) {
                  if ((signalType == 'offer' || signalType == 'answer') && data['type'] == null) {
                    data['type'] = signalType;
@@ -455,7 +455,7 @@ class _DesktopRoomScreenState extends State<DesktopRoomScreen> with SingleTicker
     if (_videoPlayerController == null || !_videoPlayerController!.value.isInitialized) return;
 
     _isSyncing = true;
-    
+
     try {
       if ((_videoPlayerController!.value.playbackSpeed - playbackRate).abs() > 0.1) {
         await _videoPlayerController!.setPlaybackSpeed(playbackRate);
@@ -470,9 +470,9 @@ class _DesktopRoomScreenState extends State<DesktopRoomScreen> with SingleTicker
       final currentPos = _videoPlayerController!.value.position.inMilliseconds / 1000.0;
       if ((currentPos - currentTime).abs() > 1.0) {
          await _videoPlayerController!.seekTo(Duration(milliseconds: (currentTime * 1000).toInt()));
-         _lastPosition = currentTime; 
+         _lastPosition = currentTime;
       }
-      
+
       if (isPlaying && !_videoPlayerController!.value.isPlaying) {
         await _videoPlayerController!.play();
         _lastPlaying = true;
@@ -557,7 +557,7 @@ class _DesktopRoomScreenState extends State<DesktopRoomScreen> with SingleTicker
         setState(() {
           _currentStatus = status;
         });
-        
+
         if (status.movie != null && status.movie!.url.isNotEmpty) {
           String newUrl = status.movie!.url;
           if (newUrl.startsWith('/')) {
@@ -572,17 +572,17 @@ class _DesktopRoomScreenState extends State<DesktopRoomScreen> with SingleTicker
           } else {
              _performSync(status.isPlaying, status.currentTime, status.playbackRate);
           }
-          
+
           String? streamUrl = status.movie!.streamDanmu;
           if (streamUrl != null && streamUrl.startsWith('/')) {
               streamUrl = '${WatchTogetherService.baseUrl.replaceAll('/api', '')}$streamUrl';
           }
-          
+
           String? danmuUrl = status.movie!.danmu;
           if (danmuUrl != null && danmuUrl.startsWith('/')) {
               danmuUrl = '${WatchTogetherService.baseUrl.replaceAll('/api', '')}$danmuUrl';
           }
-          
+
           _danmakuController.updateConfig(
             danmakuUrl: danmuUrl,
             streamDanmakuUrl: streamUrl,
@@ -610,17 +610,17 @@ class _DesktopRoomScreenState extends State<DesktopRoomScreen> with SingleTicker
 
     try {
       await newController.initialize();
-      
+
       if (!mounted) {
         newController.dispose();
         return;
       }
 
       _disposeVideoController();
-      
+
       _videoPlayerController = newController;
       _videoPlayerController!.addListener(_videoListener); // Add listener
-      
+
       if (mounted) setState(() {});
     } catch (e) {
       newController.dispose();
@@ -688,7 +688,7 @@ class _DesktopRoomScreenState extends State<DesktopRoomScreen> with SingleTicker
               icon: const Icon(Icons.stop_circle_outlined, color: Colors.red),
               tooltip: '停止播放',
             ),
-          if ((_currentUser?.username == widget.room.creator) || 
+          if ((_currentUser?.username == widget.room.creator) ||
               _members.any((m) => m.id == _currentUser?.id && m.role == 2))
             IconButton(
               onPressed: _showRoomSettings,
@@ -727,7 +727,7 @@ class _DesktopRoomScreenState extends State<DesktopRoomScreen> with SingleTicker
               ),
             ),
           ),
-          
+
           // Sidebar (Chat/List/Members)
           Container(
             width: 350,
@@ -759,7 +759,7 @@ class _DesktopRoomScreenState extends State<DesktopRoomScreen> with SingleTicker
   // ... (Other methods: _handleSync, _toggleFullScreen, _sendDanmaku, etc.)
   // Note: I need to copy the rest of the methods, which are mostly identical to mobile version.
   // I will write the rest of the file in the next tool call if needed, or put them all here.
-  
+
   void _handleSync() {
     if (_channel != null) {
       try {
@@ -778,7 +778,7 @@ class _DesktopRoomScreenState extends State<DesktopRoomScreen> with SingleTicker
     // For PC, maybe toggle window fullscreen? Or just ignore.
     // Currently CustomVideoPlayer handles fullscreen by pushing a new route.
     if (_videoPlayerController == null || !_videoPlayerController!.value.isInitialized) return;
-    
+
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (context) => CustomVideoPlayer(
@@ -829,7 +829,7 @@ class _DesktopRoomScreenState extends State<DesktopRoomScreen> with SingleTicker
     final theme = Theme.of(context);
     return Column(
       children: [
-        _buildVoiceControl(theme),
+        // _buildVoiceControl(theme),
         Expanded(
           child: ListView.builder(
             controller: _chatScrollController,
@@ -839,12 +839,12 @@ class _DesktopRoomScreenState extends State<DesktopRoomScreen> with SingleTicker
               final msg = _messages[index];
               final name = msg['username'] ?? 'Unknown';
               final content = msg['content'] ?? '';
-              
+
               int ts = msg['timestamp'] is int ? msg['timestamp'] : 0;
               if (ts < 100000000000) ts *= 1000;
               final dt = DateTime.fromMillisecondsSinceEpoch(ts);
               final timeStr = '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
-              
+
               return Padding(
                 padding: const EdgeInsets.only(bottom: 12),
                 child: Column(
@@ -901,15 +901,15 @@ class _DesktopRoomScreenState extends State<DesktopRoomScreen> with SingleTicker
         children: [
           Icon(
             _webrtcManager!.isConnected ? Icons.mic_rounded : Icons.mic_off_rounded,
-            color: _webrtcManager!.isConnected 
+            color: _webrtcManager!.isConnected
               ? (_webrtcManager!.isMuted ? Colors.red : Colors.green)
               : theme.disabledColor,
             size: 20,
           ),
           const SizedBox(width: 8),
           Text(
-            _webrtcManager!.isConnected 
-              ? (_webrtcManager!.hasPeersConnected 
+            _webrtcManager!.isConnected
+              ? (_webrtcManager!.hasPeersConnected
                   ? (_webrtcManager!.isMuted ? '语音已连接 (${_webrtcManager!.participantCount}人) (静音)' : '语音已连接 (${_webrtcManager!.participantCount}人)')
                   : (_webrtcManager!.isMuted ? '等待加入... (1人) (静音)' : '等待加入... (1人)'))
               : '语音聊天',
@@ -970,7 +970,7 @@ class _DesktopRoomScreenState extends State<DesktopRoomScreen> with SingleTicker
   Widget _buildPlaylistTab() {
     final theme = Theme.of(context);
     final primaryColor = const Color(0xFF5D5FEF);
-    
+
     return Column(
       children: [
         Padding(
@@ -1116,17 +1116,17 @@ class _DesktopRoomScreenState extends State<DesktopRoomScreen> with SingleTicker
               itemCount: _members.length,
               itemBuilder: (context, index) {
                 final member = _members[index];
-                
+
                 WUser? myMemberInfo;
                 try {
                   myMemberInfo = _members.firstWhere((m) => m.id == _currentUser?.id);
                 } catch (_) {}
-                
+
                 final viewerIsCreator = _currentUser?.username == widget.room.creator;
                 final viewerIsRoomAdmin = myMemberInfo?.role == 2;
                 final viewerIsSysAdmin = (_currentUser?.role ?? 0) >= 4;
                 final viewerCanManage = viewerIsCreator || viewerIsRoomAdmin || viewerIsSysAdmin;
-                
+
                 int viewerLevel = 1;
                 if (viewerIsCreator) viewerLevel = 3;
                 else if (viewerIsRoomAdmin) viewerLevel = 2;
@@ -1136,9 +1136,9 @@ class _DesktopRoomScreenState extends State<DesktopRoomScreen> with SingleTicker
                 final isTargetAdmin = member.role == 2;
                 final isMe = _currentUser?.id == member.id;
                 final isPending = member.status == 2;
-                
+
                 final canKick = viewerLevel > member.role;
-              
+
                 return Container(
                   margin: const EdgeInsets.only(bottom: 8),
                   decoration: BoxDecoration(
@@ -1158,7 +1158,7 @@ class _DesktopRoomScreenState extends State<DesktopRoomScreen> with SingleTicker
                           ),
                           child: CircleAvatar(
                             backgroundColor: primaryColor.withOpacity(0.1),
-                            child: Text(member.username.isNotEmpty ? member.username[0].toUpperCase() : '?', 
+                            child: Text(member.username.isNotEmpty ? member.username[0].toUpperCase() : '?',
                               style: TextStyle(color: primaryColor, fontWeight: FontWeight.bold)),
                           ),
                         ),
@@ -1209,9 +1209,9 @@ class _DesktopRoomScreenState extends State<DesktopRoomScreen> with SingleTicker
                         ],
                       ],
                     ),
-                    subtitle: member.onlineCount > 0 
+                    subtitle: member.onlineCount > 0
                       ? Text('在线 (${member.onlineCount})', style: const TextStyle(color: Colors.green, fontSize: 12))
-                      : Text('离线 · 加入于 ${DateTime.fromMillisecondsSinceEpoch(member.createdAt * 1000).toString().substring(0, 10)}', 
+                      : Text('离线 · 加入于 ${DateTime.fromMillisecondsSinceEpoch(member.createdAt * 1000).toString().substring(0, 10)}',
                           style: TextStyle(color: theme.disabledColor, fontSize: 12)),
                     trailing: Row(
                       mainAxisSize: MainAxisSize.min,
@@ -1235,7 +1235,7 @@ class _DesktopRoomScreenState extends State<DesktopRoomScreen> with SingleTicker
                               tooltip: '设为管理',
                               onPressed: () => _setRoomAdmin(member),
                             ),
-                          
+
                           if (viewerIsCreator && member.role == 2)
                             IconButton(
                               icon: const Icon(Icons.remove_moderator_outlined, color: Colors.orange),
@@ -1243,7 +1243,7 @@ class _DesktopRoomScreenState extends State<DesktopRoomScreen> with SingleTicker
                               onPressed: () => _removeRoomAdmin(member),
                             ),
 
-                          if (canKick) 
+                          if (canKick)
                             IconButton(
                               icon: const Icon(Icons.remove_circle_outline, color: Colors.redAccent),
                               tooltip: '移除成员',
@@ -1264,7 +1264,7 @@ class _DesktopRoomScreenState extends State<DesktopRoomScreen> with SingleTicker
 
 
 
- 
+
   void _enterFolder(WMovie folder) {
     setState(() {
       _folderStack.add(folder);
@@ -1288,12 +1288,12 @@ class _DesktopRoomScreenState extends State<DesktopRoomScreen> with SingleTicker
     try {
       await WatchTogetherService.switchMovie(widget.room.roomId, movie.id, subPath: movie.subPath);
       if (mounted) MessageUtils.showSuccess(context, '已切换影片');
-      await _syncState(); 
+      await _syncState();
       if (mounted && _videoPlayerController != null && _videoPlayerController!.value.isInitialized) {
         await _videoPlayerController!.play();
         _sendStatus(
-          true, 
-          _videoPlayerController!.value.position.inMilliseconds / 1000.0, 
+          true,
+          _videoPlayerController!.value.position.inMilliseconds / 1000.0,
           _videoPlayerController!.value.playbackSpeed
         );
       }
@@ -1336,9 +1336,9 @@ class _DesktopRoomScreenState extends State<DesktopRoomScreen> with SingleTicker
 
   Future<void> _deleteSelectedMovies() async {
     if (_selectedMovieIds.isEmpty) return;
-    
+
     final confirmed = await ChatUtils.showStyledDialog<bool>(
-      context: context, 
+      context: context,
       title: '删除影片',
       icon: const Icon(Icons.delete_outline, color: Colors.red),
       content: Text('确定要删除选中的 ${_selectedMovieIds.length} 个影片吗？'),
@@ -1346,8 +1346,8 @@ class _DesktopRoomScreenState extends State<DesktopRoomScreen> with SingleTicker
         ChatUtils.createCancelButton(context),
         const SizedBox(width: 8),
         ChatUtils.createConfirmButton(
-          context, 
-          () => Navigator.pop(context, true), 
+          context,
+          () => Navigator.pop(context, true),
           text: '删除',
         ),
       ]
@@ -1401,10 +1401,10 @@ class _DesktopRoomScreenState extends State<DesktopRoomScreen> with SingleTicker
 
     try {
       final settings = await WatchTogetherService.getRoomSettings(widget.room.roomId, isAdmin: true);
-      
+
       if (mounted) {
-        Navigator.pop(context); 
-        
+        Navigator.pop(context);
+
         final theme = Theme.of(context);
         ChatUtils.showStyledDialog(
           context: context,
@@ -1423,16 +1423,16 @@ class _DesktopRoomScreenState extends State<DesktopRoomScreen> with SingleTicker
       }
     } catch (e) {
       if (mounted) {
-        Navigator.pop(context); 
+        Navigator.pop(context);
         MessageUtils.showError(context, '获取设置失败: $e');
       }
     }
   }
-  
+
   void _showAddMovieDialog() {
     AddMovieDialog.show(context, widget.room.roomId);
   }
-  
+
   Future<void> _approveMember(WUser member) async {
     try {
       await WatchTogetherService.approveMember(widget.room.roomId, member.id);
@@ -1517,14 +1517,14 @@ class _DesktopRoomScreenState extends State<DesktopRoomScreen> with SingleTicker
     if (confirmed == true) {
       try {
         await WatchTogetherService.kickMember(widget.room.roomId, member.id);
-        _fetchMembers(); 
+        _fetchMembers();
         if (mounted) MessageUtils.showSuccess(context, '已踢出成员');
       } catch (e) {
         if (mounted) MessageUtils.showError(context, '踢出失败: $e');
       }
     }
   }
-  
+
   void _sendMessage(String text) {
     if (text.trim().isEmpty) return;
     if (_channel != null) {

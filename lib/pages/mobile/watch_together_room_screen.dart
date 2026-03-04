@@ -39,7 +39,7 @@ class _WatchTogetherRoomScreenState extends State<WatchTogetherRoomScreen> with 
   List<WUser> _members = [];
   List<WMovie> _movies = [];
   bool _isLoadingMovies = true;
-  
+
   // Pagination
   int _currentPage = 1;
   final int _pageSize = 20;
@@ -69,7 +69,7 @@ class _WatchTogetherRoomScreenState extends State<WatchTogetherRoomScreen> with 
   // WebRTC
   WebRTCManager? _webrtcManager;
   bool _isVoiceJoined = false;
-  
+
   // Danmaku Stream
   final DanmakuController _danmakuController = DanmakuController();
 
@@ -85,13 +85,13 @@ class _WatchTogetherRoomScreenState extends State<WatchTogetherRoomScreen> with 
         _channel?.sink.close();
         _reconnectTimer?.cancel();
         _webrtcManager?.leave();
-        
+
         // Pop to home screen
         Navigator.of(context).pop();
       }
     });
     _tabController = TabController(length: 3, vsync: this);
-    
+
     // Initialize WebRTC Manager
     _webrtcManager = WebRTCManager(
       onSignalingMessage: (type, data) {
@@ -105,7 +105,7 @@ class _WatchTogetherRoomScreenState extends State<WatchTogetherRoomScreen> with 
             case 'leave': msgType = MessageType.WEBRTC_LEAVE; break;
             default: return;
           }
-          
+
           try {
             final payload = {'data': jsonEncode(data)};
             if (data['to'] != null) {
@@ -122,7 +122,7 @@ class _WatchTogetherRoomScreenState extends State<WatchTogetherRoomScreen> with 
         if (mounted) setState(() {});
       },
     );
-    
+
     _joinRoom();
   }
 
@@ -156,7 +156,7 @@ class _WatchTogetherRoomScreenState extends State<WatchTogetherRoomScreen> with 
   Future<void> _fetchMembers() async {
     try {
       final members = await WatchTogetherService.getRoomMembers(widget.room.roomId);
-      
+
       members.sort((a, b) {
         if (a.id == widget.room.creatorId) return -1;
         if (b.id == widget.room.creatorId) return 1;
@@ -180,10 +180,10 @@ class _WatchTogetherRoomScreenState extends State<WatchTogetherRoomScreen> with 
     try {
       _currentPage = 1;
       _hasMoreMovies = true;
-      
+
       final parentFolder = _folderStack.isNotEmpty ? _folderStack.last : null;
       final result = await WatchTogetherService.getMovies(
-        widget.room.roomId, 
+        widget.room.roomId,
         parentId: parentFolder?.id,
         subPath: parentFolder?.subPath,
         page: 1,
@@ -199,7 +199,7 @@ class _WatchTogetherRoomScreenState extends State<WatchTogetherRoomScreen> with 
           _isLoadingMovies = false;
           _hasMoreMovies = _movies.length < total;
         });
-        
+
         if (_movieScrollController.hasClients) {
           _movieScrollController.jumpTo(0);
         }
@@ -222,7 +222,7 @@ class _WatchTogetherRoomScreenState extends State<WatchTogetherRoomScreen> with 
 
   Future<void> _loadMoreMovies() async {
     if (_isLoadingMoreMovies) return;
-    
+
     setState(() {
       _isLoadingMoreMovies = true;
     });
@@ -230,16 +230,16 @@ class _WatchTogetherRoomScreenState extends State<WatchTogetherRoomScreen> with 
     try {
       final parentFolder = _folderStack.isNotEmpty ? _folderStack.last : null;
       final result = await WatchTogetherService.getMovies(
-        widget.room.roomId, 
+        widget.room.roomId,
         parentId: parentFolder?.id,
         subPath: parentFolder?.subPath,
         page: _currentPage + 1,
         max: _pageSize
       );
-      
+
       final movies = result['movies'] as List<WMovie>;
       final total = result['total'] as int;
-      
+
       if (mounted) {
         setState(() {
           if (movies.isNotEmpty) {
@@ -264,7 +264,7 @@ class _WatchTogetherRoomScreenState extends State<WatchTogetherRoomScreen> with 
 
   Future<void> _connectWebSocket() async {
     _reconnectTimer?.cancel();
-    
+
     try {
       final token = await WatchTogetherService.getToken();
       if (token == null) return;
@@ -276,7 +276,7 @@ class _WatchTogetherRoomScreenState extends State<WatchTogetherRoomScreen> with 
         path: '${httpUri.path}/room/ws',
         queryParameters: {'roomId': widget.room.roomId},
       );
-      
+
       _channel = IOWebSocketChannel.connect(
         wsUrl,
         protocols: [token],
@@ -284,7 +284,7 @@ class _WatchTogetherRoomScreenState extends State<WatchTogetherRoomScreen> with 
 
       _channel!.stream.listen(
         (data) {
-          _reconnectAttempts = 0; 
+          _reconnectAttempts = 0;
           if (data is Uint8List || data is List<int>) {
              try {
                final message = SimpleProto.decode(data is Uint8List ? data : Uint8List.fromList(data));
@@ -314,11 +314,11 @@ class _WatchTogetherRoomScreenState extends State<WatchTogetherRoomScreen> with 
        if (mounted) MessageUtils.showError(context, '连接断开，请退出重试');
        return;
     }
-    
+
     _reconnectAttempts++;
     final delay = Duration(seconds: _reconnectAttempts * 2); // Exponential backoff
     debugPrint('Scheduling reconnect attempt $_reconnectAttempts in ${delay.inSeconds}s');
-    
+
     _reconnectTimer = Timer(delay, () {
       if (mounted) {
         _connectWebSocket();
@@ -328,12 +328,12 @@ class _WatchTogetherRoomScreenState extends State<WatchTogetherRoomScreen> with 
 
   void _handleWebSocketMessage(Map<String, dynamic> message) {
     final type = message['type'];
-    
+
     if (type == MessageType.CHAT) {
       final sender = message['sender'];
       final content = message['chatContent'];
       final username = sender != null ? sender['username'] : 'Unknown';
-      
+
       // Convert chat to danmaku
       if (_videoPlayerController != null && _videoPlayerController!.value.isInitialized) {
         final currentPos = _videoPlayerController!.value.position;
@@ -346,7 +346,7 @@ class _WatchTogetherRoomScreenState extends State<WatchTogetherRoomScreen> with 
         );
         _danmakuController.add(danmaku);
       }
-      
+
       if (mounted) {
         setState(() {
           _messages.add({
@@ -367,9 +367,9 @@ class _WatchTogetherRoomScreenState extends State<WatchTogetherRoomScreen> with 
         final isPlaying = status['is_playing'] == true;
         final currentTime = (status['current_time'] as num).toDouble();
         final playbackRate = (status['playback_rate'] as num?)?.toDouble() ?? 1.0;
-        
+
         _performSync(isPlaying, currentTime, playbackRate);
-        
+
         if (type == MessageType.SYNC) {
            debugPrint('Sync success');
         } else if (type == MessageType.CHECK_STATUS) {
@@ -393,17 +393,17 @@ class _WatchTogetherRoomScreenState extends State<WatchTogetherRoomScreen> with 
            MessageUtils.showError(context, '登录已过期，请重新登录');
            Navigator.of(context).pop();
          }
-      } else if (type == MessageType.WEBRTC_OFFER || 
-                 type == MessageType.WEBRTC_ANSWER || 
+      } else if (type == MessageType.WEBRTC_OFFER ||
+                 type == MessageType.WEBRTC_ANSWER ||
                  type == MessageType.WEBRTC_ICE_CANDIDATE ||
                  type == MessageType.WEBRTC_JOIN ||
                  type == MessageType.WEBRTC_LEAVE) {
          if (_webrtcManager != null) {
             final webrtcMap = message['webrtcData'];
-            
+
             try {
               Map<String, dynamic> data = {};
-              
+
               if (webrtcMap != null && webrtcMap['data'] != null) {
                  try {
                    final decoded = jsonDecode(webrtcMap['data']);
@@ -417,19 +417,19 @@ class _WatchTogetherRoomScreenState extends State<WatchTogetherRoomScreen> with 
 
               String? fromId;
               final rawFrom = webrtcMap != null ? webrtcMap['from'] : null;
-              
+
               if (rawFrom != null && rawFrom.toString().isNotEmpty) {
                  fromId = rawFrom.toString();
               } else if (message['sender'] != null) {
                  fromId = message['sender']['userId'];
               }
-              
+
               if (fromId != null) {
                  data['from'] = fromId;
               } else {
                  return;
               }
-            
+
               String signalType = '';
               switch (type) {
                  case MessageType.WEBRTC_OFFER: signalType = 'offer'; break;
@@ -438,7 +438,7 @@ class _WatchTogetherRoomScreenState extends State<WatchTogetherRoomScreen> with 
                  case MessageType.WEBRTC_JOIN: signalType = 'join'; break;
                  case MessageType.WEBRTC_LEAVE: signalType = 'leave'; break;
               }
-              
+
               if (signalType.isNotEmpty) {
                  if ((signalType == 'offer' || signalType == 'answer') && data['type'] == null) {
                    data['type'] = signalType;
@@ -456,7 +456,7 @@ class _WatchTogetherRoomScreenState extends State<WatchTogetherRoomScreen> with 
     if (_videoPlayerController == null || !_videoPlayerController!.value.isInitialized) return;
 
     _isSyncing = true;
-    
+
     try {
       if ((_videoPlayerController!.value.playbackSpeed - playbackRate).abs() > 0.1) {
         await _videoPlayerController!.setPlaybackSpeed(playbackRate);
@@ -471,9 +471,9 @@ class _WatchTogetherRoomScreenState extends State<WatchTogetherRoomScreen> with 
       final currentPos = _videoPlayerController!.value.position.inMilliseconds / 1000.0;
       if ((currentPos - currentTime).abs() > 1.0) {
          await _videoPlayerController!.seekTo(Duration(milliseconds: (currentTime * 1000).toInt()));
-         _lastPosition = currentTime; 
+         _lastPosition = currentTime;
       }
-      
+
       if (isPlaying && !_videoPlayerController!.value.isPlaying) {
         await _videoPlayerController!.play();
         _lastPlaying = true;
@@ -558,7 +558,7 @@ class _WatchTogetherRoomScreenState extends State<WatchTogetherRoomScreen> with 
         setState(() {
           _currentStatus = status;
         });
-        
+
         if (status.movie != null && status.movie!.url.isNotEmpty) {
           String newUrl = status.movie!.url;
           if (newUrl.startsWith('/')) {
@@ -573,17 +573,17 @@ class _WatchTogetherRoomScreenState extends State<WatchTogetherRoomScreen> with 
           } else {
              _performSync(status.isPlaying, status.currentTime, status.playbackRate);
           }
-          
+
           String? streamUrl = status.movie!.streamDanmu;
           if (streamUrl != null && streamUrl.startsWith('/')) {
               streamUrl = '${WatchTogetherService.baseUrl.replaceAll('/api', '')}$streamUrl';
           }
-          
+
           String? danmuUrl = status.movie!.danmu;
           if (danmuUrl != null && danmuUrl.startsWith('/')) {
               danmuUrl = '${WatchTogetherService.baseUrl.replaceAll('/api', '')}$danmuUrl';
           }
-          
+
           _danmakuController.updateConfig(
             danmakuUrl: danmuUrl,
             streamDanmakuUrl: streamUrl,
@@ -611,17 +611,17 @@ class _WatchTogetherRoomScreenState extends State<WatchTogetherRoomScreen> with 
 
     try {
       await newController.initialize();
-      
+
       if (!mounted) {
         newController.dispose();
         return;
       }
 
       _disposeVideoController();
-      
+
       _videoPlayerController = newController;
       _videoPlayerController!.addListener(_videoListener); // Add listener
-      
+
       if (mounted) setState(() {});
     } catch (e) {
       newController.dispose();
@@ -731,8 +731,8 @@ class _WatchTogetherRoomScreenState extends State<WatchTogetherRoomScreen> with 
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: theme.brightness == Brightness.dark 
-                        ? Colors.white.withOpacity(0.1) 
+                    color: theme.brightness == Brightness.dark
+                        ? Colors.white.withOpacity(0.1)
                         : Colors.black.withOpacity(0.05),
                     shape: BoxShape.circle,
                   ),
@@ -794,7 +794,7 @@ class _WatchTogetherRoomScreenState extends State<WatchTogetherRoomScreen> with 
           const SizedBox(width: 8),
           Row(
             children: [
-              if ((_currentUser?.username == widget.room.creator) || 
+              if ((_currentUser?.username == widget.room.creator) ||
                   _members.any((m) => m.id == _currentUser?.id && m.role == 2))
                 IconButton(
                   onPressed: _showRoomSettings,
@@ -869,7 +869,7 @@ class _WatchTogetherRoomScreenState extends State<WatchTogetherRoomScreen> with 
 
   void _toggleFullScreen() {
     if (_videoPlayerController == null || !_videoPlayerController!.value.isInitialized) return;
-    
+
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (context) => CustomVideoPlayer(
@@ -901,7 +901,7 @@ class _WatchTogetherRoomScreenState extends State<WatchTogetherRoomScreen> with 
 
   Widget _buildTabBar(ThemeData theme) {
     final isDark = theme.brightness == Brightness.dark;
-    
+
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 24),
       height: 46,
@@ -941,7 +941,7 @@ class _WatchTogetherRoomScreenState extends State<WatchTogetherRoomScreen> with 
     final theme = Theme.of(context);
     return Column(
       children: [
-        _buildVoiceControl(theme),
+        // _buildVoiceControl(theme),
         Expanded(
           child: _messages.isEmpty
             ? Center(
@@ -962,13 +962,13 @@ class _WatchTogetherRoomScreenState extends State<WatchTogetherRoomScreen> with 
                   final msg = _messages[index];
                   final name = msg['username'] ?? 'Unknown';
                   final content = msg['content'] ?? '';
-                  
+
                   int ts = msg['timestamp'] is int ? msg['timestamp'] : 0;
                   // Auto-detect seconds vs ms
                   if (ts < 100000000000) ts *= 1000;
                   final dt = DateTime.fromMillisecondsSinceEpoch(ts);
                   final timeStr = '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
-                  
+
                   return Padding(
                     padding: const EdgeInsets.only(bottom: 12),
                     child: Row(
@@ -977,7 +977,7 @@ class _WatchTogetherRoomScreenState extends State<WatchTogetherRoomScreen> with 
                         CircleAvatar(
                           radius: 16,
                           backgroundColor: const Color(0xFF5D5FEF).withOpacity(0.1),
-                          child: Text(name.isNotEmpty ? name[0].toUpperCase() : '?', 
+                          child: Text(name.isNotEmpty ? name[0].toUpperCase() : '?',
                             style: const TextStyle(color: Color(0xFF5D5FEF), fontSize: 12, fontWeight: FontWeight.bold)),
                         ),
                         const SizedBox(width: 12),
@@ -1063,15 +1063,15 @@ class _WatchTogetherRoomScreenState extends State<WatchTogetherRoomScreen> with 
         children: [
           Icon(
             _webrtcManager!.isConnected ? Icons.mic_rounded : Icons.mic_off_rounded,
-            color: _webrtcManager!.isConnected 
+            color: _webrtcManager!.isConnected
               ? (_webrtcManager!.isMuted ? Colors.red : Colors.green)
               : theme.disabledColor,
             size: 20,
           ),
           const SizedBox(width: 8),
           Text(
-            _webrtcManager!.isConnected 
-              ? (_webrtcManager!.hasPeersConnected 
+            _webrtcManager!.isConnected
+              ? (_webrtcManager!.hasPeersConnected
                   ? (_webrtcManager!.isMuted ? '语音已连接 (${_webrtcManager!.participantCount}人) (静音)' : '语音已连接 (${_webrtcManager!.participantCount}人)')
                   : (_webrtcManager!.isMuted ? '等待加入... (1人) (静音)' : '等待加入... (1人)'))
               : '语音聊天',
@@ -1165,7 +1165,7 @@ class _WatchTogetherRoomScreenState extends State<WatchTogetherRoomScreen> with 
                     Text(
                       '播放列表 (${_movies.length})',
                       style: TextStyle(
-                        fontSize: 16, 
+                        fontSize: 16,
                         fontWeight: FontWeight.bold,
                         color: theme.textTheme.titleLarge?.color
                       ),
@@ -1232,8 +1232,8 @@ class _WatchTogetherRoomScreenState extends State<WatchTogetherRoomScreen> with 
                            return const Padding(
                              padding: EdgeInsets.all(16.0),
                              child: Center(child: SizedBox(
-                               width: 24, 
-                               height: 24, 
+                               width: 24,
+                               height: 24,
                                child: CircularProgressIndicator(strokeWidth: 2)
                              )),
                            );
@@ -1242,13 +1242,13 @@ class _WatchTogetherRoomScreenState extends State<WatchTogetherRoomScreen> with 
                         final isCurrent = _currentStatus?.movie?.id == movie.id;
                         final isFolder = movie.isFolder;
                         final isSelected = _selectedMovieIds.contains(movie.id);
-                        
+
                         return Container(
                           margin: const EdgeInsets.only(bottom: 12),
                           decoration: BoxDecoration(
                             color: isSelected ? theme.primaryColor.withOpacity(0.1) : theme.cardColor,
                             borderRadius: BorderRadius.circular(16),
-                            border: _isSelectionMode 
+                            border: _isSelectionMode
                                 ? null
                                 : ((isCurrent && !isFolder) ? Border.all(color: primaryColor, width: 1.5) : null),
                             boxShadow: [
@@ -1294,8 +1294,8 @@ class _WatchTogetherRoomScreenState extends State<WatchTogetherRoomScreen> with 
                                       height: 40,
                                       margin: const EdgeInsets.only(right: 12),
                                       decoration: BoxDecoration(
-                                        color: isFolder 
-                                            ? Colors.amber.withOpacity(0.1) 
+                                        color: isFolder
+                                            ? Colors.amber.withOpacity(0.1)
                                             : theme.disabledColor.withOpacity(0.1),
                                         borderRadius: BorderRadius.circular(12),
                                       ),
@@ -1320,7 +1320,7 @@ class _WatchTogetherRoomScreenState extends State<WatchTogetherRoomScreen> with 
                                           maxLines: 1,
                                           overflow: TextOverflow.ellipsis,
                                         ),
-                                        
+
                                         // Tags Row
                                         if (movie.live || movie.proxy || movie.vendorInfo?['bilibili']?['shared'] == true || movie.vendorInfo?['vendor'] != null) ...[
                                           const SizedBox(height: 4),
@@ -1359,7 +1359,7 @@ class _WatchTogetherRoomScreenState extends State<WatchTogetherRoomScreen> with 
                                                   ),
                                                   child: const Text('分享', style: TextStyle(fontSize: 10, color: Colors.orange)),
                                                 ),
-                                              
+
                                               // Vendor Tags
                                               if (movie.vendorInfo?['vendor'] == 'bilibili')
                                                 Container(
@@ -1409,7 +1409,7 @@ class _WatchTogetherRoomScreenState extends State<WatchTogetherRoomScreen> with 
                       },
                     ),
         ),
-        
+
         // Selection Mode Bottom Bar
         if (_isSelectionMode)
           Container(
@@ -1497,18 +1497,18 @@ class _WatchTogetherRoomScreenState extends State<WatchTogetherRoomScreen> with 
               itemCount: _members.length,
               itemBuilder: (context, index) {
                 final member = _members[index];
-                
+
                 // Determine viewer role
                 WUser? myMemberInfo;
                 try {
                   myMemberInfo = _members.firstWhere((m) => m.id == _currentUser?.id);
                 } catch (_) {}
-                
+
                 final viewerIsCreator = _currentUser?.username == widget.room.creator;
                 final viewerIsRoomAdmin = myMemberInfo?.role == 2;
                 final viewerIsSysAdmin = (_currentUser?.role ?? 0) >= 4;
                 final viewerCanManage = viewerIsCreator || viewerIsRoomAdmin || viewerIsSysAdmin;
-                
+
                 int viewerLevel = 1;
                 if (viewerIsCreator) viewerLevel = 3;
                 else if (viewerIsRoomAdmin) viewerLevel = 2;
@@ -1518,9 +1518,9 @@ class _WatchTogetherRoomScreenState extends State<WatchTogetherRoomScreen> with 
                 final isTargetAdmin = member.role == 2;
                 final isMe = _currentUser?.id == member.id;
                 final isPending = member.status == 2;
-                
+
                 final canKick = viewerLevel > member.role;
-              
+
               return Container(
                 margin: const EdgeInsets.only(bottom: 12),
                 decoration: BoxDecoration(
@@ -1651,7 +1651,7 @@ class _WatchTogetherRoomScreenState extends State<WatchTogetherRoomScreen> with 
                             tooltip: '设为管理',
                             onPressed: () => _setRoomAdmin(member),
                           ),
-                        
+
                         // Remove Admin: Viewer is Creator, Target is Admin (Role 2)
                         if (viewerIsCreator && member.role == 2)
                           IconButton(
@@ -1661,7 +1661,7 @@ class _WatchTogetherRoomScreenState extends State<WatchTogetherRoomScreen> with 
                           ),
 
                         // Kick Member: Hierarchy check
-                        if (canKick) 
+                        if (canKick)
                           IconButton(
                             icon: const Icon(Icons.remove_circle_outline, color: Colors.redAccent),
                             tooltip: '移除成员',
@@ -1713,11 +1713,11 @@ class _WatchTogetherRoomScreenState extends State<WatchTogetherRoomScreen> with 
         ChatUtils.createConfirmButton(context, () => Navigator.pop(context, true), text: '确定'),
       ],
     );
-     
+
     if (confirm == true) {
       try {
         await WatchTogetherService.kickMember(widget.room.roomId, member.id);
-        _fetchMembers(); 
+        _fetchMembers();
         if (mounted) MessageUtils.showSuccess(context, '已踢出成员');
       } catch (e) {
         if (mounted) MessageUtils.showError(context, '踢出失败: $e');
@@ -1784,10 +1784,10 @@ class _WatchTogetherRoomScreenState extends State<WatchTogetherRoomScreen> with 
 
     try {
       final settings = await WatchTogetherService.getRoomSettings(widget.room.roomId, isAdmin: true);
-      
+
       if (mounted) {
         Navigator.pop(context); // Pop loading
-        
+
         final theme = Theme.of(context);
         ChatUtils.showStyledDialog(
           context: context,
@@ -1832,13 +1832,13 @@ class _WatchTogetherRoomScreenState extends State<WatchTogetherRoomScreen> with 
     try {
       await WatchTogetherService.switchMovie(widget.room.roomId, movie.id, subPath: movie.subPath);
       if (mounted) MessageUtils.showSuccess(context, '已切换影片');
-      await _syncState(); 
+      await _syncState();
       // Auto play after switch
       if (mounted && _videoPlayerController != null && _videoPlayerController!.value.isInitialized) {
         await _videoPlayerController!.play();
         _sendStatus(
-          true, 
-          _videoPlayerController!.value.position.inMilliseconds / 1000.0, 
+          true,
+          _videoPlayerController!.value.position.inMilliseconds / 1000.0,
           _videoPlayerController!.value.playbackSpeed
         );
       }
@@ -1888,10 +1888,10 @@ class _WatchTogetherRoomScreenState extends State<WatchTogetherRoomScreen> with 
 
   Future<void> _deleteSelectedMovies() async {
     if (_selectedMovieIds.isEmpty) return;
-    
+
     final theme = Theme.of(context);
     final confirmed = await ChatUtils.showStyledDialog<bool>(
-      context: context, 
+      context: context,
       title: '删除影片',
       icon: const Icon(Icons.delete_outline, color: Colors.red),
       content: Text('确定要删除选中的 ${_selectedMovieIds.length} 个影片吗？', style: TextStyle(color: theme.textTheme.bodyLarge?.color)),
@@ -1899,8 +1899,8 @@ class _WatchTogetherRoomScreenState extends State<WatchTogetherRoomScreen> with 
         ChatUtils.createCancelButton(context),
         const SizedBox(width: 8),
         ChatUtils.createConfirmButton(
-          context, 
-          () => Navigator.pop(context, true), 
+          context,
+          () => Navigator.pop(context, true),
           text: '删除',
         ),
       ]
@@ -1950,8 +1950,8 @@ class _WatchTogetherRoomScreenState extends State<WatchTogetherRoomScreen> with 
         ChatUtils.createCancelButton(context),
         const SizedBox(width: 8),
         ChatUtils.createConfirmButton(
-          context, 
-          () => Navigator.pop(context, true), 
+          context,
+          () => Navigator.pop(context, true),
           text: '清空',
         ),
       ],
@@ -1961,7 +1961,7 @@ class _WatchTogetherRoomScreenState extends State<WatchTogetherRoomScreen> with 
       try {
         final parentFolder = _folderStack.isNotEmpty ? _folderStack.last : null;
         await WatchTogetherService.clearMovies(
-          widget.room.roomId, 
+          widget.room.roomId,
           parentId: parentFolder?.id,
         );
         if (mounted) {
